@@ -120,23 +120,50 @@ class Wiki:
 
 	@property
 	def replacement_seed(self) -> bool:
-		if self.__replacement_seed == True:
-			return True
-		else:
-			return False
+		return True self.__replacement_seed == True else False
 
 
 	@property
 	def old_seed(self) -> Union[str, None]:
 		if self.__old_seed != None:
 			return f'{self.__old_seed}'
+			
+			
+class Subtraction:
+	
+	
+	def index_from_indexIDT(self, indexIDT:Union[str, int]) -> Union[str, None]:
+		try:
+			indexIDT = [int(x) for x in str(indexIDT).split('.')[0].split(':')]
+			if len(indexIDT) > 1:
+				indexIDT[0] += 1
+				a, b = 1, 1
+				while len(indexIDT) != 2:
+					indexIDT[0] = indexIDT[0] * a
+					indexIDT[1] += 1 if a == 1 else b+1 if indexIDT[0] / 2 == indexIDT[0] // 2 else b
+					indexIDT[0] += indexIDT[1]
+					del indexIDT[1]
+					a += 1
+					b += 2
+			return ':'.join([str(x) for x in indexIDT])
+		except ValueError:
+			return None
+			
+			
+	def type_translation_coordNDT(self, coordNDT:str, separators:str='/') -> Union[str, int]:
+		coordNDT = str(coordNDT).split(separators)
+		try:
+			return int(coordNDT[0]) if coordNDT[-1] == 'int' else coordNDT[0]
+		except ValueError:
+			return coordNDT[0]
 
 
-class ParserTreeIDT:
+class ParserTreeIDT(Subtraction):
 
 
 	def __init__(self, tree_idt:dict) -> None:
 		self.__tree = tree_idt
+		self.__s = Subtraction
 
 
 	def nodes_from_contin_growth(self, logic:Union[bool, int, str, None]) -> dict:
@@ -412,16 +439,16 @@ class ParserTreeIDT:
 			return a if len(a) != 0 else None
 
 
-class ParserTreeNDT:
+class ParserTreeNDT(Subtraction):
 
 
 	def __init__(self, tree:dict) -> None:
 		self.__tree = tree
-		print(tree)
+		self.__s = Subtraction
 
 
-	def nodes(self, coord:Union[int, str]) -> Union[list, None]:
-		coord, a = coord.split('/'), self.__tree
+	def nodes(self, coord:Union[int, str], separators:str='/') -> Union[list, None]:
+		coord, a = coord.split(separators), self.__tree
 		for i in coord:
 			try:
 				a = a[i]
@@ -436,20 +463,24 @@ class ParserTreeNDT:
 		return a[0] if len(a) != 0 else None
 
 
-class ParserTreeNLT:
+class ParserTreeNLT(Subtraction):
 
 
 	def __init__(self, tree:list) -> None:
 			self.__tree = tree
+			self.__s = Subtraction
 
 
 	def index(self, node:Union[str, int]) -> Union[list, None]:
 		a, b = [], self.__tree
 		for i in range(len(b)):
-			if b[i] != self.root_node() and b[i] != None:
+			if b[i] != None:
 				for j in range(len(b[i])):
 					if b[i][j] == node:
-						a.append(f'{i}:{j}')
+						if i != 0:
+							a.append(f'{i}:{j}')
+						else:
+							a.append(str(i))
 		return a if len(a) != 0 else None
 
 
@@ -463,11 +494,26 @@ class ParserTreeNLT:
 		return a
 
 
-	def nodes_by_index(self, index:Union[str, int]) -> Union[list, None]:
+	def index_by_index(self, index:Union[str, int]) -> Union[str, None]:
 		try:
-			return self.__tree[sum([int(i) for i in str(index).split(':')])+1]
-		except (ValueError, IndexError):
+			index, a, c = [int(i) for i in str(index).split(':')], 0, 0
+			for i in range(index[0]):
+				if i != 0:
+					try:
+						b = len(self.__tree[i])
+						a += b
+						if b/2 != b//2:
+							a -= c
+						c += 2
+					except TypeError:
+						a -= 1
+			return sum(index)+(1 if a == 0 else a)
+		except (IndexError, ValueError):
 			return None
+			
+			
+	def nodes_by_index(self, index:Union[str, int]) -> Union[list, None]:
+		return self.node(self.index_by_index(index))
 
 
 	def positive_nodes(self, internal_lists:bool=True) -> list:
@@ -483,43 +529,8 @@ class ParserTreeNLT:
 
 
 	def tree_continuation_by_index(self, index:Union[str, int]) -> Union[list, None]:
-		a, c, b, g  = [self.node(index)], [index], 0, int(str(index).split(':')[0])
-		while True:
-			print(a)
-			print(c[b])
-			e = self.nodes_by_index(c[b])
-			if g <= int(c[b].split(':')[0]):
-				a.append(e)
-				try:
-					for i in e:
-						for j in self.index(i):
-							if g == int(j.split(':')[0]) and j not in c:
-								c.append(j)
-				except TypeError:
-					pass
-				g += self.__tree.index(c[b])
-				b += 1
-				if b == 10:
-					break
+		a = [self.node(index)]
 		return a
-
-
-	def index_from_indexIDT(self, indexIDT:Union[str, int]) -> Union[str, int, None]:
-		try:
-			indexIDT = [int(x) for x in str(indexIDT).split('.')[0].split(':')]
-			if len(indexIDT) > 1:
-				indexIDT[0] += 1
-				a, b = 1, 1
-				while len(indexIDT) != 2:
-					indexIDT[0] = indexIDT[0] * a
-					indexIDT[1] += 1 if a == 1 else b+1 if indexIDT[0] / 2 == indexIDT[0] // 2 else b
-					indexIDT[0] += indexIDT[1]
-					del indexIDT[1]
-					a += 1
-					b += 2
-			return ':'.join([str(x) for x in indexIDT])
-		except ValueError:
-			return None
 
 
 	def indexIDT_from_index(self, index:Union[str, int]) -> Union[str, int, None]:
@@ -528,7 +539,20 @@ class ParserTreeNLT:
 
 
 	def node_by_indexIDT(self, indexIDT:Union[str, int]) -> Union[str, int, None]:
-		return self.node(self.index_from_indexIDT(indexIDT))
+		return self.node(self.__s.index_from_indexIDT(self, indexIDT))
+		
+		
+	def index_from_coordNDT(self, coordNDT:str, separators:str='/') -> Union[str, None]:
+		try:
+			coordNDT = coordNDT.split(separators+separators)
+			a = self.index_by_index(self.index(self.__s.type_translation_coordNDT(self, coordNDT[0]))[0])
+			for i in range(len(coordNDT)):
+				if i != 0:
+					b = f'{a}:{self.__tree[a].index(self.__s.type_translation_coordNDT(self, coordNDT[i]))}'
+					a = self.index_by_index(b) if i != len(coordNDT)-1 else b
+			return a
+		except (TypeError, ValueError):
+			return None
 
 
 	def root_node(self) -> str:
@@ -768,6 +792,13 @@ class CreateTree(ParserTreeIDT, _TextError):
 	@property
 	def root_seed(self) -> str:
 		return f'{self.__root_seed}'
+		
+		
+class TreeIDT(CreateTree):
+	
+	
+	def __init__(self) -> None:
+		pass
 
 
 class TreeNDT(CreateTree):
