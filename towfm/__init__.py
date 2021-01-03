@@ -117,7 +117,7 @@ class Wiki:
 	@property
 	def list(self) -> list:
 		if self.__list != None:
-			return self.__list.count()
+			return self.__list.copy()
 
 
 	@property
