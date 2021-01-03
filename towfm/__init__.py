@@ -686,7 +686,7 @@ class CreateTree(ParserTreeIDT, _TextError):
 				text = text + self.__pt.seed(self, self.__index_print) + '\n|\n' + ('o' if str(int(c)) == '1' else 'x') + '\n\n'
 		except TypeError:
 			pass
-		text = text + f'seed: {self.__root_seed}\nmax level: {self.__pt.max_level(self)}\nmax index: {self.__pt.max_index(self)}\namount of knowledge: {len(self.__knowledge)}\nword count: {len(self.__tree)}\n'
+		text = text + f'root seed: {self.__root_seed_list[self.__root_seed_index]}\nmax level: {self.__pt.max_level(self)}\nmax index: {self.__pt.max_index(self)}\namount of knowledge: {len(self.__knowledge)}\nword count: {len(self.__tree)}\n'
 		return text
 
 
