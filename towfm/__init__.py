@@ -742,7 +742,7 @@ class CreateTree(ParserTreeIDT, _TextError):
 			self.__root_seed_index = a
 		self.update_knowledge_list()
 		if list_seed != None:
-			self.add(0, list_seed, type='index')
+			self.add(seed, list_seed, type='index')
 
 
 	def replacement(self, seed_or_index:Union[str, int], new_seed:Union[str, None], type:str=None) -> None:
@@ -840,6 +840,10 @@ class CreateTree(ParserTreeIDT, _TextError):
 
 	def index_print(self, index:Union[str, int]) -> None:
 		self.__index_print = index
+
+
+	def root_seed_index(self, index:Union[str, int]) -> None:
+		self.__root_seed_index = index
 
 
 	def specific_type(self, type:str) -> None:
