@@ -117,7 +117,7 @@ class Wiki:
 	@property
 	def list(self) -> list:
 		if self.__list != None:
-			return loads(dumps(self.__list))
+			return self.__list.count()
 
 
 	@property
@@ -225,19 +225,15 @@ class ParserTreeIDT(Subtraction):
 
 
 	def max_index_by_index(self, index:str) -> Union[str, None]:
-		a, index = 0, str(index).split('.')[0]
-		while True:
-			if self.seed(f'{index}:{a}') == None:
-				if a != 0:
-					b = self.logic_from_index(f'{index}:{a-1}')
-					c = f'{index}:{a-1}{"."+str(int(b)) if b != None else ""}'
-					if c in self.__tree:
-						return c
-					return None
-				else:
-					if self.max_index_by_level(len(index.split(':'))+1) == None:
-						return None
-			a += 1
+		a, b = 0, None
+		try:
+			for i in self.nodes_by_index(index):
+				c = int(i.split('.')[0].split(':')[-1])
+				if a <= c:
+					a, b = c, i
+		except TypeError:
+			pass
+		return b
 
 
 	def seed(self, index:Union[str, int]) -> Union[str, None]:
@@ -251,26 +247,21 @@ class ParserTreeIDT(Subtraction):
 				return None
 
 
-	def nodes_by_level(self, level:int) -> dict:
+	def nodes_by_level(self, level:Union[int, str], sort:bool=False) -> dict:
 		a = {}
 		for i in self.__tree:
-			if len(i.split('.')[0].split(':')) == level:
+			if len(i.split('.')[0].split(':')) == int(level):
 				a[i] = self.__tree[i]
-		return a
+		return self.sorting_node(a) if sort else a
 
 
-	def nodes_by_index(self, index:Union[str, int]) -> Union[dict, None]:
-		a, index = {}, str(index).split('.')[0]
-		try:
-			for i in range(int(self.max_index_by_index(index).split('.')[0].split(':')[-1])+1):
-				try:
-					b = self.logic_from_index(f'{index}:{i}')
-					a[f'{index}:{i}{"."+str(int(b)) if b != None else ""}'] = self.__tree[f'{index}:{i}{"."+str(int(b)) if b != None else ""}']
-				except KeyError:
-					continue
-			return a
-		except AttributeError:
-			return None
+	def nodes_by_index(self, index:Union[str, int], sort:bool=False) -> Union[dict, None]:
+		a, index, b = {}, str(index).split('.')[0], 0
+		for i in self.__tree:
+			if len(i.split(':')) == len(index.split(':'))+1 and index+':' in i:
+				a[i] = self.__tree[i]
+				b += 1
+		return (self.sorting_node(a) if sort else a) if len(a) != 0 else None
 
 
 	def node_by_index(self, index:Union[str, int]) -> Union[dict, None]:
@@ -281,12 +272,7 @@ class ParserTreeIDT(Subtraction):
 
 	def logic_from_index(self, index:Union[str, int]) -> Union[bool, None]:
 		index = str(index).split('.')[0]
-		if f'{index}.1' in self.__tree.keys():
-			return True
-		elif f'{index}.0' in self.__tree.keys():
-			return False
-		else:
-			return None
+		return True if f'{index}.1' in self.__tree.keys() else False if f'{index}.0' in self.__tree.keys() else None
 
 
 	def logic_from_seed(self, seed:Union[str, int]) -> Union[dict, None]:
@@ -317,7 +303,7 @@ class ParserTreeIDT(Subtraction):
 
 
 	def tree_continuation_by_index(self, index:Union[str, int]) -> Union[dict, None]:
-		index = index.split('.')[0]
+		index = str(index).split('.')[0]
 		b = self.logic_from_index(index)
 		c = f'{index}{"."+str(int(b)) if b != None else ""}'
 		if c in self.__tree:
@@ -372,16 +358,27 @@ class ParserTreeIDT(Subtraction):
 		return a
 
 
-	def index_certain_type(self, seed_or_index:Union[str, int], type:str='seed') -> Union[list, None]:
-		if type == 'seed':
-			return self.index(seed_or_index)
-		else:
-			seed_or_index = seed_or_index.split('.')[0]
-			a = self.logic_from_index(seed_or_index)
-			b = f'{seed_or_index}{"."+str(int(a)) if a != None else ""}'
-			if b in self.__tree:
-				return [b]
-		return None
+	def index_certain_type(self, seed_or_index:Union[str, int], type:str=None, root_seed_index:Union[int, None]=None) -> Union[list, None]:
+		while True:
+			if type == 'seed':
+				a = self.index(seed_or_index)
+				if root_seed_index == None or a == None:
+					return a
+				else:
+					for i in range(len(a.copy())-1):
+						if int(a[i].split('.')[0].split(':')[0]) != root_seed_index:
+							del a[i]
+					return a if len(a) != 0 else None
+			elif type == 'index':
+				seed_or_index = str(seed_or_index).split('.')[0]
+				a = self.logic_from_index(seed_or_index)
+				b = f'{seed_or_index}{"."+str(int(a)) if a != None else ""}'
+				if b in self.__tree:
+					return [b] if root_seed_index == None else [b] if int(b.split('.')[0].split(':')[0]) == root_seed_index else None
+			else:
+				type = self.type(seed_or_index)
+				continue
+			return None
 
 
 	def type(self, value:Union[str, int]) -> str:
@@ -394,6 +391,21 @@ class ParserTreeIDT(Subtraction):
 				return 'seed'
 		except ValueError:
 			return 'seed'
+
+
+	def sorting_node(self, nodes:dict) -> dict:
+		index = self.root_index_by_index(list(nodes.keys())[0])
+		b, c, i = 0, {}, 0
+		while len(nodes) != len(c):
+			f = index+':'+str(b)
+			d = self.logic_from_index(f)
+			d = '.'+str(int(d)) if d != None else ''
+			f = f+d
+			if f in nodes:
+				c[index+f':{i}{d}'] = nodes[f]
+				i += 1
+			b += 1
+		return c
 
 
 	def max_level(self) -> int:
@@ -585,18 +597,17 @@ class ParserTreeNLT(Subtraction):
 				b.append('0')
 			node_or_index = ':'.join(b)
 		b = self.nodes_by_index(node_or_index)
-		if b == None:
-			return False
-		elif len(b) != 0:
-			return True
+		return False if b == None else True if len(b) != 0 else None
 
 
 	def tree_IDT(self) -> dict:
-		pass
+		a = {}
+		return a
 
 
 	def tree_NDT(self) -> dict:
-		pass
+		a = {}
+		return a
 
 
 	def type(self, value:Union[str, int]) -> str:
@@ -619,29 +630,33 @@ class ParserTreeNLT(Subtraction):
 class CreateTree(ParserTreeIDT, _TextError):
 
 
-	def __init__(self, seed:Union[str, int], list_seed:Union[list, None]=None, sort:bool=True, removing_logic:bool=True, error:bool=True, node_quantity:int=None, delete_duplicates:bool=False) -> None:
+	def __init__(self, seed:Union[str, int, None]=None, list_seed:Union[list, None]=None, specific_type:str=None, type_knowledge_creation:str='list_knowledge', sort:bool=True, removing_logic:bool=True, error:bool=True, node_quantity:int=None, rsp:bool=True, delete_duplicates:bool=False, duplicate_root_node:bool=True) -> None:
 		self.__tree = {}
-		self.__tree[f'0.{0 if seed in list_knowledge else 1}'] = seed
-		self.__knowledge = list_knowledge
-		self.__knowledge.append(seed)
+		self.__root_seed_list = []
+		self.__root_seed_index = 0
+		self.__knowledge_list = []
+		self.__general_knowledge = list_knowledge.copy()
 		self.__new_knowledge = []
-		self.__history_of_knowledge = []
-		self.__root_seed = seed
+		self.__history_of_knowledge_list = []
 		self.__index_print = '0'
+		self.__specific_type = specific_type
+		self.__type_knowledge_creation = type_knowledge_creation
 		self.__sort = sort
 		self.__removing_logic = removing_logic
 		self.__node_quantity = node_quantity
+		self.__rsp = rsp
 		self.__error = error
 		self.__delete_duplicates = delete_duplicates
+		self.__duplicate_root_node = duplicate_root_node
 		self.__list_seed = []
 		self.__te = _TextError
 		self.__pt = ParserTreeIDT
 		self.update_pt()
-		if error == False:
+		if not error:
 			self.__log = logging
 			self.__log.basicConfig(format=text_info_for_logging)
-		if list_seed != None:
-			self.add(self.__root_seed, list_seed)
+		if seed != None:
+			self.add_root_node(seed, list_seed)
 
 
 	def __str__(self) -> str:
@@ -655,12 +670,7 @@ class CreateTree(ParserTreeIDT, _TextError):
 				b = 0
 				for i in a:
 					text = text + a[i]
-					if b == 0:
-						text = text + '\n|\n'
-					elif b == len(a)-1:
-						text = text + '\n'
-					else:
-						text = text + '--'
+					text += '\n|\n' if b == 0 else '\n' if b == len(a)-1 else '--'
 					b += 1
 				b = 0
 				for k in range(2):
@@ -680,8 +690,8 @@ class CreateTree(ParserTreeIDT, _TextError):
 		return text
 
 
-	def add(self, seed_or_index:Union[str, int], list_seed:Union[list, None]=None, type:str='seed') -> None:
-		coord2 = self.__pt.index_certain_type(self, seed_or_index, type)
+	def add(self, seed_or_index:Union[str, int], list_seed:Union[list, None]=None, type:str=None) -> None:
+		coord2 = self.__pt.index_certain_type(self, seed_or_index, type if type != None else self.__specific_type, self.__root_seed_index)
 		if coord2 == None:
 			if self.__error:
 				raise ValueError(self.__te._ValueError0(seed_or_index))
@@ -696,20 +706,16 @@ class CreateTree(ParserTreeIDT, _TextError):
 				if list_seed != None:
 					for i in range(len(list_seed)):
 						self.__tree[f'{coord}:{i}.{0 if list_seed[i] in self.__knowledge else 1}'] = list_seed[i]
-						if list_seed[i] not in self.__knowledge:
-							self.__knowledge.append(list_seed[i])
-							self.__new_knowledge.append(list_seed[i])
+						self.__value_knowledge = list_seed[i]
+						self.update_knowledge(False)
 						if i+1 == self.__node_quantity:
 							break
 					if len(self.__new_knowledge) != 0:
 						self.__history_of_knowledge.append(self.__new_knowledge.copy())
 				else:
 					self.__tree[f'{coord}.0'] = self.__tree.pop(coord2)
-					if list_seed not in self.__knowledge:
-						self.__knowledge.append(list_seed)
-						self.__new_knowledge.append(list_seed)
-						if len(self.__new_knowledge) != 0:
-							self.__history_of_knowledge.append(self.__new_knowledge.copy())
+					self.__value_knowledge = list_seed[i]
+					self.update_knowledge()
 				self.rsp()
 				break
 			else:
@@ -719,8 +725,28 @@ class CreateTree(ParserTreeIDT, _TextError):
 					self.__log.error(f'BufferError: {self.__te._BufferError0(seed_or_index)}')
 
 
-	def replacement(self, seed_or_index:Union[str, int], new_seed:Union[str, None], type:str='seed') -> None:
-		coord2 = self.__pt.index_certain_type(self, seed_or_index, type)
+	def add_root_node(self, seed:str, list_seed:Union[list, None]=None, type_knowledge_creation:str=None, automatic_movement:bool=True) -> None:
+		type_knowledge_creation = self.__type_knowledge_creation if type_knowledge_creation == None else type_knowledge_creation
+		self.__knowledge_list.append(list_knowledge.copy() if type_knowledge_creation == 'list_knowledge' else self.__knowledge.copy() if type_knowledge_creation == 'root_list_knowledge' else []) #list_knowledge root_list_knowledge new_list_knowledge
+		a = len(self.__root_seed_list)
+		if seed in (self.__knowledge_list[a] if self.__duplicate_root_node else self.__root_seed_list):
+			self.__tree[f'{a}.0'] = seed
+		else:
+			self.__tree[f'{a}.1'] = seed
+			self.__knowledge_list[a].append(seed)
+		if seed not in self.__general_knowledge:
+			self.__general_knowledge.append(seed)
+		self.__root_seed_list.append(seed)
+		self.__history_of_knowledge_list.append([])
+		if automatic_movement:
+			self.__root_seed_index = a
+		self.update_knowledge_list()
+		if list_seed != None:
+			self.add(0, list_seed, type='index')
+
+
+	def replacement(self, seed_or_index:Union[str, int], new_seed:Union[str, None], type:str=None) -> None:
+		coord2 = self.__pt.index_certain_type(self, seed_or_index, type if type != None else self.__specific_type, self.__root_seed_index)
 		if coord2 == None:
 			if self.__error:
 				raise ValueError(self.__te._ValueError0(seed_or_index))
@@ -732,11 +758,8 @@ class CreateTree(ParserTreeIDT, _TextError):
 				self.__new_knowledge.clear()
 				coord, coord2 = coord2[j].split('.')[0], coord2[j]
 				self.__tree[f'{coord}{".1" if self.__pt.index(self, new_seed) == None else ".0"}'] = self.__tree.pop(coord2)[0] if new_seed == None else [self.__tree.pop(coord2), new_seed] if isinstance(self.__tree[coord2], list) == False else [self.__tree.pop(coord2)[0], new_seed]
-				if new_seed not in self.__knowledge:
-					self.__knowledge.append(new_seed)
-					self.__new_knowledge.append(new_seed)
-					if len(self.__new_knowledge) != 0:
-						self.__history_of_knowledge.append(self.__new_knowledge.copy())
+				self.__value_knowledge = list_seed[i]
+				self.update_knowledge()
 				self.rsp()
 				break
 			else:
@@ -746,8 +769,8 @@ class CreateTree(ParserTreeIDT, _TextError):
 					self.__log.error(f'BufferError: {self.__te._BufferError1(seed_or_index)}')
 
 
-	def delete(self, seed_or_index:str, type:str='seed', positive_seeds:bool=False, rsp:bool=True) -> None:
-		coord = self.__pt.index_certain_type(self, seed_or_index, type)
+	def delete(self, seed_or_index:str, type:str='seed', positive_seeds:bool=False) -> None:
+		coord = self.__pt.index_certain_type(self, seed_or_index, type if type != None else self.__specific_type, self.__root_seed_index)
 		if coord == None:
 			if self.__error:
 				raise ValueError(self.__te._ValueError0(seed_or_index))
@@ -767,8 +790,7 @@ class CreateTree(ParserTreeIDT, _TextError):
 			if coord[i] != f'0{"."+str(int(c)) if c != None else ""}':
 				for j in self.__pt.tree_continuation_by_index(self, coord[i]):
 					del self.__tree[j]
-				if rsp == True:
-					self.rsp()
+				self.rsp()
 				break
 			else:
 				if a-1 == i:
@@ -782,34 +804,37 @@ class CreateTree(ParserTreeIDT, _TextError):
 			a = self.__pt.index(self, i)
 			if a != None and len(a) > 1:
 				for j in a:
-					try:
-						self.delete(j, type='index', rsp=False)
-					except BufferError:
-						continue
+					if not self.__pt.tree_extension(self, j) and not bool(self.__pt.logic_from_index(self, j)):
+						del self.__tree[j]
 
 
 	def sort(self) -> None:
-		a, b, c = {min(self.__pt.index(self, self.__root_seed)):self.__root_seed}, self.__pt.nodes_by_index(self, '0'), []
-		if b != None:
-			for i in b:
-				a[i] = b[i]
-				c.append(i.split('.')[0])
-			while len(a) != len(self.__tree):
-				for i in c:
-					b = self.__pt.nodes_by_index(self, i)
-					if b != None:
-						for j in b:
-							h = j.split('.')[0]
-							if h not in c:
-								a[j] = b[j]
-								c.append(h)
+		a = {}
+		k = 0
+		for d in range(len(self.__root_seed_list)):
+			a[min(self.__pt.index(self, self.__root_seed_list[d]))] = self.__root_seed_list[d]
+			b, c = self.__pt.nodes_by_index(self, d, True), []
+			if b != None:
+				for i in b:
+					a[i] = b[i]
+					c.append(i.split('.')[0])
+				k += len(self.__pt.tree_continuation_by_index(self, d))
+				while len(a) != k:
+					for i in c:
+						b = self.__pt.nodes_by_index(self, i, True)
+						if b != None:
+							for j in b:
+								h = j.split('.')[0]
+								if h not in c:
+									a[j] = b[j]
+									c.append(h)
 		self.__tree = a
 
 
 	def removing_logic(self) -> None:
 		a = self.__tree.copy()
 		for i in a:
-			if self.__pt.tree_extension(self, i) == True:
+			if self.__pt.tree_extension(self, i):
 				self.__tree[i.split('.')[0]] = self.__tree.pop(i)
 
 
@@ -817,49 +842,90 @@ class CreateTree(ParserTreeIDT, _TextError):
 		self.__index_print = index
 
 
+	def specific_type(self, type:str) -> None:
+		self.__specific_type = type
+
+
 	def update_pt(self) -> None:
 		self.__pt.__init__(self, self.__tree)
 
 
+	def update_knowledge(self, save_history:bool=True) -> None:
+		if self.__value_knowledge != None:
+			if self.__value_knowledge not in self.__knowledge:
+				self.__knowledge.append(self.__value_knowledge)
+				self.__new_knowledge.append(self.__value_knowledge)
+				if len(self.__new_knowledge) != 0 and save_history == True:
+					self.__history_of_knowledge.append(self.__new_knowledge.copy())
+			if self.__value_knowledge not in self.__general_knowledge:
+				self.__general_knowledge.append(self.__value_knowledge)
+			self.__value_knowledge = None
+
+
+	def update_knowledge_list(self) -> None:
+		self.__knowledge = self.__knowledge_list[self.__root_seed_index]
+		self.__history_of_knowledge = self.__history_of_knowledge_list[self.__root_seed_index]
+
+
 	def rsp(self) -> None:
-		if self.__delete_duplicates == True:
-			self.delete_duplicates()
-		if self.__removing_logic == True:
-			self.removing_logic()
-		if self.__sort == True:
-			self.sort()
-		self.update_pt()
+		if self.__rsp:
+			if self.__delete_duplicates:
+				self.delete_duplicates()
+			if self.__removing_logic:
+				self.removing_logic()
+			if self.__sort:
+				self.sort()
+			self.update_pt()
 
 
 	def list_seed(self, value:Union[str, int, None]=None) -> Union[None, list]:
 		if value == None:
-			return loads(dumps(self.__list_seed))
+			return self.__list_seed.copy()
 		self.__list_seed.append(value)
 
 
 	@property
 	def tree(self) -> dict:
-		return loads(dumps(self.__tree))
+		return self.__tree.copy()
 
 
 	@property
 	def knowledge(self) -> list:
-		return loads(dumps(self.__knowledge))
+		return self.__knowledge.copy()
+
+
+	@property
+	def knowledge_list(self) -> list:
+		return self.__knowledge_list.copy()
+
+
+	@property
+	def general_knowledge(self) -> list:
+		return self.__general_knowledge.copy()
 
 
 	@property
 	def new_knowledge(self) -> list:
-		return loads(dumps(self.__new_knowledge))
+		return self.__new_knowledge.copy()
 
 
 	@property
 	def history_of_knowledge(self) -> list:
-		return loads(dumps(self.__history_of_knowledge))
+		return self.__history_of_knowledge.copy()
+
+
+	@property
+	def history_of_knowledge_list(self) -> list:
+		return self.__history_of_knowledge_list.copy()
 
 
 	@property
 	def root_seed(self) -> str:
-		return f'{self.__root_seed}'
+		return f'{self.__root_seed_list[self.__root_seed_index]}'
+
+	@property
+	def root_seed_list(self) -> list:
+		return self.__root_seed_list.copy()
 
 
 class TreeIDT(CreateTree):
@@ -898,3 +964,9 @@ class SaveImage(ParserTreeIDT):
 
 	def __str__(self) -> str:
 		pass
+
+
+class SaveFileJS():
+
+
+	pass
