@@ -725,7 +725,7 @@ class CreateTree(ParserTreeIDT, _TextError):
 					self.__log.error(f'BufferError: {self.__te._BufferError0(seed_or_index)}')
 
 
-	def add_root_node(self, seed:str, list_seed:Union[list, None]=None, type_knowledge_creation:str=None, automatic_movement:bool=True) -> None:
+	def add_root_node(self, seed:Union[str, int], list_seed:Union[list, None]=None, type_knowledge_creation:Union[str, None]=None, automatic_movement:bool=True) -> None:
 		type_knowledge_creation = self.__type_knowledge_creation if type_knowledge_creation == None else type_knowledge_creation
 		self.__knowledge_list.append(list_knowledge.copy() if type_knowledge_creation == 'list_knowledge' else self.__knowledge.copy() if type_knowledge_creation == 'root_list_knowledge' else []) #list_knowledge root_list_knowledge new_list_knowledge
 		a = len(self.__root_seed_list)
@@ -742,10 +742,10 @@ class CreateTree(ParserTreeIDT, _TextError):
 			self.__root_seed_index = a
 		self.update_knowledge_list()
 		if list_seed != None:
-			self.add(seed, list_seed, type='index')
+			self.add(seed, list_seed, type='seed')
 
 
-	def replacement(self, seed_or_index:Union[str, int], new_seed:Union[str, None], type:str=None) -> None:
+	def replacement(self, seed_or_index:Union[str, int], new_seed:Union[str, None], type:Union[str, None]=None) -> None:
 		coord2 = self.__pt.index_certain_type(self, seed_or_index, type if type != None else self.__specific_type, self.__root_seed_index)
 		if coord2 == None:
 			if self.__error:
@@ -769,7 +769,7 @@ class CreateTree(ParserTreeIDT, _TextError):
 					self.__log.error(f'BufferError: {self.__te._BufferError1(seed_or_index)}')
 
 
-	def delete(self, seed_or_index:str, type:str='seed', positive_seeds:bool=False) -> None:
+	def delete(self, seed_or_index:str, type:Union[str, None]=None, positive_seeds:bool=False) -> None:
 		coord = self.__pt.index_certain_type(self, seed_or_index, type if type != None else self.__specific_type, self.__root_seed_index)
 		if coord == None:
 			if self.__error:
@@ -844,6 +844,7 @@ class CreateTree(ParserTreeIDT, _TextError):
 
 	def root_seed_index(self, index:Union[str, int]) -> None:
 		self.__root_seed_index = index
+		self.update_knowledge_list()
 
 
 	def specific_type(self, type:str) -> None:
