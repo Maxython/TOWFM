@@ -25,8 +25,8 @@ class _TextError:
 
 	def _ValueError0(value:Union[str, int]) -> str:
 		return f'there is no "{value}" meaning in the tree.'
-		
-		
+
+
 	def _ValueError1(value:Union[str, int]) -> str:
 		return f'there are forbidden characters in the value "{value}". Make sure there are no characters ";", ":" and ".".'
 
@@ -127,15 +127,13 @@ class Wiki:
 
 
 	@property
-	def list(self) -> list:
-		if self.__list != None:
-			return self.__list.copy()
+	def list(self) -> Union[list, None]:
+		return self.__list.copy() if self.__list != None else None
 
 
 	@property
-	def seed(self) -> str:
-		if self.__seed != None:
-			return f'{self.__seed}'
+	def seed(self) -> Union[str, None]:
+		return f'{self.__seed}' if self.__seed != None else None
 
 
 	@property
@@ -145,8 +143,15 @@ class Wiki:
 
 	@property
 	def old_seed(self) -> Union[str, None]:
-		if self.__old_seed != None:
-			return f'{self.__old_seed}'
+		return f'{self.__old_seed}' if self.__old_seed != None else None
+
+
+	def _list(self) -> list:
+		return self.__list.copy() if self.__list != None else None
+
+
+	def _seed(self) -> str:
+		return f'{self.__seed}' if self.__seed != None else None
 
 
 class Subtraction:
@@ -243,8 +248,9 @@ class ParserTreeIDT(Subtraction):
 
 	def seed(self, index:Union[str, int]) -> Union[str, None]:
 		try:
+			index = str(index)
 			if not('.' in index and ';' in index):
-				index = str(index).split(';')[0].split('.')[0]
+				index = index.split(';')[0].split('.')[0]
 				a, b = self.logic_from_index(index), self.linked_seed_by_index(index)
 				index = f'{index}{"."+str(int(a)) if a != None else ""}{";"+b if b != None else ""}'
 			c = self.__tree[index]
@@ -298,8 +304,8 @@ class ParserTreeIDT(Subtraction):
 				a[i] = self.logic_from_index(i)
 			return a
 		return None
-		
-		
+
+
 	def linked_seed_by_index(self, index:Union[str, int]) -> Union[str, None]:
 		index = str(index)
 		index2 = str(index).split(';')[0].split('.')[0].split(':')
@@ -315,7 +321,7 @@ class ParserTreeIDT(Subtraction):
 			a = self.index(seed_or_index)
 			if a == None:
 				return None
-			seed_or_index = h[0]
+			seed_or_index = a[0]
 		else:
 			seed_or_index = str(seed_or_index).split(';')[0].split('.')[0]
 			a, b = self.logic_from_index(seed_or_index), self.linked_seed_by_index(seed_or_index)
@@ -351,33 +357,30 @@ class ParserTreeIDT(Subtraction):
 
 
 	def tree_NDT(self, js:bool=True) -> dict:
-		"""
-		Is not working properly, a fix is ​​in progress.
-		"""
 		a, d = '{', list(self.root_nodes())
 		for i in range(len(d)):
 			b, h, g = self.logic_from_index(d[i]), 0, []
-			a += '"%s": %s' % (self.__tree[f'{i}{"."+str(int(b)) if b != None else ""}']+' '+str(i), '{' if self.tree_extension(0) == True else 'null')
+			a += '"%s": %s' % (str(self.__tree[f'{i}{"."+str(int(b)) if b != None else ""}'])+' '+str(i), '{' if self.tree_extension(d[i]) else 'null')
 			b = list(self.nodes_by_index(d[i]))
-			while True:
+			while len(g) != len(self.tree_continuation_by_index(d[i]))-1:
 				if b[h] not in g:
 					c = self.tree_extension(b[h])
-					a += f'"{self.__tree[b[h]]}": {"null" if c == False else "{"}{", " if len(b)-1 != h and c == False else ""}'
+					a += f'"{self.__tree[b[h]]}": {"null" if not c else "{"}{", " if not c and max(b) != b[h] else ""}'
 					g.append(b[h])
 					if c == True:
 						b, h = list(self.nodes_by_index(b[h])), 0
 						continue
-				if h == len(b)-1:
+				if len(b)-1 <= h:
 					c = self.root_index_by_index(b[h])
-					b = list(self.nodes_from_index(c))
-					if len(b) == len(d):
+					b = self.nodes_from_index(c)
+					b = list(self.nodes_by_index(c)) if b == None else list(b)
+					if len(g) != len(self.tree_continuation_by_index(d[i]))-1 or len(d)-1 != i:
 						a += '}%s' % ('' if str(c) == max(b) else ', ')
-						if i == len(d)-1:
-							a += '}'
-							return loads(a) if js == True else a
-						break
 					h = 0
-				h += 1
+				else:
+					h += 1
+		a += '}' * (a.count('{')-a.count('}'))
+		return loads(a) if js == True else a
 
 
 	def tree_NLT(self) -> list:
@@ -475,8 +478,8 @@ class ParserTreeIDT(Subtraction):
 		index = str(index).split('.')[0].split(':')
 		del index[-1]
 		return self.nodes_by_index(':'.join(index), index_only=index_only)
-			
-			
+
+
 	def sorting_node(self, nodes:dict, tree_nodes:Union[dict, None]=None) -> dict:
 		ind_t = min(list(nodes.keys()))
 		index, b, c, i = self.root_index_by_index(ind_t, nodes=tree_nodes).split(';')[0].split('.')[0], 0, {}, 0
@@ -859,7 +862,7 @@ class CreateTree(ParserTreeIDT):
 					self.__log.error(f'BufferError: {self.__te._BufferError1(seed_or_index)}')
 
 
-	def replacement(self, seed_or_index:Union[str, int], new_seed:Union[str, None]=None, type:Union[str, None]=None) -> None: 
+	def replacement(self, seed_or_index:Union[str, int], new_seed:Union[str, None]=None, type:Union[str, None]=None) -> None:
 		coord2 = self.index_certain_type(seed_or_index, type if type != None else self.__specific_type, self.__root_seed_index)
 		if coord2 == None:
 			if self.__error:
@@ -1077,16 +1080,16 @@ class CreateTree(ParserTreeIDT):
 	@property
 	def root_seed_list(self) -> list:
 		return self.__root_seed_list.copy()
-		
-		
+
+
 	def _tree(self) -> dict:
 		return self.__tree.copy()
 
 
 	def _general_knowledge(self) -> list:
 		return self.__general_knowledge.copy()
-		
-		
+
+
 	def _root_seed_list(self) -> list:
 		return self.__root_seed_list.copy()
 
@@ -1124,14 +1127,14 @@ class BinaryTree(CreateTree):
 				self.add_root_node(seed[j])
 			self.form_empty_nodes()
 
-			
+
 	def form_empty_nodes(self) -> None:
 		a = self._tree()
 		for i in a:
 			if not isinstance(a[i], bool) and not self.tree_extension(i):
 				self.add(i, [False, True])
-				
-				
+
+
 	def processed_logic_by_index(self, index:Union[str, int]) -> Union[bool, None]:
 		b = self.nodes_by_index(index)
 		if b != None:
@@ -1145,62 +1148,63 @@ class BinaryTree(CreateTree):
 	def processed_tree(self) -> dict:
 		a, b = {}, self._tree()
 		for i in b:
-			c = self.processed_logic_by_index(i)
+			g = self.nodes_from_index(i)
+			c, h = self.processed_logic_by_index(i), self.linked_seed_by_index(min(g) if g != None else i)
 			if isinstance(b[i], list):
-				a[f'{i}{"."+str(int(c)) if c != None else ""}'] = b[i][1]
+				a[f'{i.split(";")[0].split(".")[0]}{"."+str(int(c)) if c != None else ""}{";"+h if h != None else ""}'] = b[i][1]
 			elif isinstance(b[i], bool):
 				pass
 			else:
-				a[f'{i}{"."+str(int(c)) if c != None else ""}'] = b[i]
+				a[f'{i.split(";")[0].split(".")[0]}{"."+str(int(c)) if c != None else ""}{";"+h if h != None else ""}'] = b[i]
 		return a
 
 
-class TreeNLT(CreateTree, ParserTreeNLT):
+#class TreeNLT(CreateTree, ParserTreeNLT):
 
 
-	def __init__(self, treeNLT, specific_type:Union[str, None]=None, type_knowledge_creation:str='list_knowledge', sort:bool=True, binary_sort:bool=False, removing_logic:bool=True, error:bool=True, node_quantity:Union[int, None]=None, rsp:bool=True, delete_duplicates:bool=False, duplicate_root_node:bool=True) -> None:
-		self.__pt = ParserTreeNLT
-		self.__pt.__init__(self, treeNLT)
-		self.__t = CreateTree
-		self.__t.__init__(self, specific_type=specific_type,
-						  type_knowledge_creation=type_knowledge_creation,
-						  sort=sort,
-						  binary_sort=binary_sort,
-						  removing_logic=removing_logic,
-						  error=error,
-						  node_quantity=node_quantity,
-						  rsp=rsp,
-						  delete_duplicates=delete_duplicates,
-						  duplicate_root_node=duplicate_root_node)
-		a = self.dividing_tree_by_root_node()
-		for i in range(len(a)):
-			self.add_root_node(a[i][0], a[i][1])
-			b = a[i][1]
+	#def __init__(self, treeNLT, specific_type:Union[str, None]=None, type_knowledge_creation:str='list_knowledge', sort:bool=True, binary_sort:bool=False, removing_logic:bool=True, error:bool=True, node_quantity:Union[int, None]=None, rsp:bool=True, delete_duplicates:bool=False, duplicate_root_node:bool=True) -> None:
+		#self.__pt = ParserTreeNLT
+		#self.__pt.__init__(self, treeNLT)
+		#self.__t = CreateTree
+		#self.__t.__init__(self, specific_type=specific_type,
+						  #type_knowledge_creation=type_knowledge_creation,
+						  #sort=sort,
+						  #binary_sort=binary_sort,
+						  #removing_logic=removing_logic,
+						  #error=error,
+						  #node_quantity=node_quantity,
+						  #rsp=rsp,
+						  #delete_duplicates=delete_duplicates,
+						  #duplicate_root_node=duplicate_root_node)
+		#a = self.dividing_tree_by_root_node()
+		#for i in range(len(a)):
+			#self.add_root_node(a[i][0], a[i][1])
+			#b = a[i][1]
 
 
-class TreeIDT(TreeNLT, ParserTreeIDT):
+#class TreeIDT(TreeNLT, ParserTreeIDT):
 
 
-	def __init__(self, treeIDT, specific_type:Union[str, None]=None, type_knowledge_creation:str='list_knowledge', sort:bool=True, binary_sort:bool=False, removing_logic:bool=True, error:bool=True, node_quantity:Union[int, None]=None, rsp:bool=True, delete_duplicates:bool=False, duplicate_root_node:bool=True) -> None:
-		pass
+	#def __init__(self, treeIDT, specific_type:Union[str, None]=None, type_knowledge_creation:str='list_knowledge', sort:bool=True, binary_sort:bool=False, removing_logic:bool=True, error:bool=True, node_quantity:Union[int, None]=None, rsp:bool=True, delete_duplicates:bool=False, duplicate_root_node:bool=True) -> None:
+		#pass
 
 
-class SaveImage(ParserTreeIDT):
+#class SaveImage(ParserTreeIDT):
 
 
-	def __init__(self, treeIDT:dict, name_image:str='tree_image', background:str='white', occupy_px:int=20, space_px:int=5) -> None:
-		tp = ParserTree
-		tp.__init__(self, tree)
-		a = sum([int(i) for i in tp.max_index(self).split('.')[0].split(':')])
-		img = Image.new('RGBA', ((a+1)*occupy_px+a*space_px, 100), background)
-		img.save(f'{name_image}.png')
+	#def __init__(self, treeIDT:dict, name_image:str='tree_image', background:str='white', occupy_px:int=20, space_px:int=5) -> None:
+		#tp = ParserTree
+		#tp.__init__(self, tree)
+		#a = sum([int(i) for i in tp.max_index(self).split('.')[0].split(':')])
+		#img = Image.new('RGBA', ((a+1)*occupy_px+a*space_px, 100), background)
+		#img.save(f'{name_image}.png')
 
 
-	def __str__(self) -> str:
-		pass
+	#def __str__(self) -> str:
+		#pass
 
 
-class SaveFileJS():
+#class SaveFileJS():
 
 
-	pass
+	#pass
