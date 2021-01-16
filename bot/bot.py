@@ -12,18 +12,22 @@ def start(message):
 def CWT(message):
     if not(';' in message.text or ':' in message.text or '.' in message.text):
         bot.send_message(message.chat.id, 'Please wait loading.')
-        a = CreateTree(message.text)
-        b = Wiki(quantity=10)
+        a, b, c = CreateTree(message.text), Wiki(quantity=10), True
         b.search(message.text)
         a.add(b.seed, b.list, 'seed')
-        for i in a.history_of_knowledge[0]:
-            try:
-                b.search(i)
-                a.add(b.seed, b.list, 'seed')
-            except AttributeError:
-                continue
+        try:
+            for i in a.history_of_knowledge[0]:
+                try:
+                    b.search(i)
+                    a.add(b.seed, b.list, 'seed')
+                except AttributeError:
+                    continue
+        except IndexError:
+            bot.send_message(message.chat.id, 'Unfortunately, it cannot be formed from this word.')
+            c = False
         bot.send_message(message.chat.id, f"Here's the result:\nMax level:{a.max_level()}\nMax index:{a.max_index()}\namount of knowledge: {len(a.knowledge)}\nword count: {len(a.tree)}\n")
-        bot.send_message(message.chat.id, f'And yes, here is a tree with the NDT type)\n{a.tree_NDT()}')
+        if c:
+            bot.send_message(message.chat.id, f'And yes, here is a tree with the NDT type)\n{a.tree_NDT()}')
     else:
         bot.send_message(message.chat.id, _TextError._ValueError1(message.text))
 
