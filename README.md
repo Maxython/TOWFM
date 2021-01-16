@@ -16,7 +16,7 @@ pip3 install TOWFM
 
 ## Test run
 After installing the module, you can start generating the Binary Tree.
-## Command:
+#### Command:
 ```Python
 from towfm.BTT import run
 run()
