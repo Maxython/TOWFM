@@ -3,7 +3,7 @@
 # TOWFM
 
 ## What is TOWFM?
-TOWFM is a flexible, handy python module for creating different texture data for a tree. The module already has many useful functions.
+TOWFM is a flexible and convenient Python module for creating various data in the form of a tree.
 
 ## Installing TOWFM
 The module supports the latest python version (3.9).
