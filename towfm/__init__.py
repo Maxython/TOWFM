@@ -28,7 +28,7 @@ class _TextError:
 
 
 	def _ValueError1(value:Union[str, int]) -> str:
-		return f'there are forbidden characters in the value "{value}". Make sure there are no characters ";", ":" and ".".'
+		return f'the value "{value}" contains a prohibited character. Check if there are any ";" and ":".'
 
 
 	def _BufferError0(value:Union[str, int]) -> str:
@@ -74,8 +74,7 @@ class Wiki:
 
 
 	def search(self, seed:str) -> None:
-		b = []
-		c = seed
+		b, c = [], seed
 		self.__replacement_seed = False
 		self.__old_seed = None
 		while True:
@@ -84,11 +83,11 @@ class Wiki:
 				con, con2 = wikipedia.summary(seed).split(), []
 				for i in range(len(con)):
 					try:
-						if self.__lower == True:
+						if self.__lower:
 							con[i] = con[i].lower()
 						for j in delete_character_list:
 							con[i] = con[i].replace(j, '')
-						if self.__remove_numbers == True:
+						if self.__remove_numbers:
 							try:
 								int(con[i])
 								del con[i]
@@ -98,7 +97,7 @@ class Wiki:
 							del con[i]
 						elif len(con2) == self.__quantity:
 							break
-						elif not(con[i] in con2):
+						elif con[i] not in con2:
 							con2.append(con[i])
 					except IndexError:
 						break
@@ -107,7 +106,7 @@ class Wiki:
 				con2 = None
 				break
 			except wikipedia.exceptions.DisambiguationError:
-				if self.__replacement == True:
+				if self.__replacement:
 					a = wikipedia.search(c)
 					if a != b:
 						if self.__old_seed == None:
@@ -119,8 +118,7 @@ class Wiki:
 								seed = i.lower()
 								break
 						continue
-				con2 = None
-				seed = c
+				con2, seed = None, c
 				break
 		self.__list = con2
 		self.__seed = seed
@@ -210,15 +208,11 @@ class ParserTreeIDT(Subtraction):
 
 
 	def index(self, seed:Union[str, int], nodes:Union[dict, None]=None) -> Union[list, None]:
-		a = self.__tree if nodes == None else nodes
-		b = []
+		a, b = self.__tree if nodes == None else nodes, []
 		for i in a:
 			if ((isinstance(a[i], str) or isinstance(a[i], int)) and a[i] == seed) or (isinstance(a[i], list) and seed in a[i]):
 				b.append(i)
-		if len(b) != 0:
-			return b
-		else:
-			return None
+		return b if len(b) != 0 else None
 
 
 	def max_index_by_level(self, level:int) -> Union[str, None]:
@@ -467,6 +461,7 @@ class ParserTreeIDT(Subtraction):
 					index2 = i.split(';')[-1]
 					for h in range(2):
 						try:
+							print(nodes)
 							for j in self.index(index2 if h == 0 else int(index2), nodes=nodes):
 								if '.0' not in j and index.split(';')[0].split('.')[0].split(':')[0] == j.split(';')[0].split('.')[0].split(':')[0]:
 									return j
@@ -787,7 +782,7 @@ class CreateTree(ParserTreeIDT):
 				if list_seed_or_seed != None:
 					for i in range(len(list_seed_or_seed)):
 						seed = list_seed_or_seed[i]
-						if not(';' in str(seed) or '.' in str(seed) or ':' in str(seed)):
+						if not(';' in str(seed) or ':' in str(seed)):
 							h = (len(b) if b != None else 0)+i
 							c = f'{coord}:{h}.{0 if list_seed_or_seed[i] in self.__knowledge else 1}'
 							self.__tree[f'{c};{self.seed(coord)}' if h == 0 else c] = list_seed_or_seed[i]
@@ -814,6 +809,11 @@ class CreateTree(ParserTreeIDT):
 
 
 	def add_root_node(self, seed:Union[str, int], list_seed:Union[list, str, int, None]=None, type_knowledge_creation:Union[str, None]=None, automatic_movement:bool=True) -> None:
+		if ';' in str(seed) or ':' in str(seed):
+			if self.__error:
+				raise ValueError(self.__te._ValueError1(seed))
+			self.__log.error(f'ValueError: {self.__te._ValueError1(seed)}')
+			return
 		type_knowledge_creation = self.__type_knowledge_creation if type_knowledge_creation == None else type_knowledge_creation
 		self.__knowledge_list.append(list_knowledge.copy() if type_knowledge_creation == 'list_knowledge' else self.__knowledge.copy() if type_knowledge_creation == 'root_list_knowledge' else []) #list_knowledge root_list_knowledge new_list_knowledge
 		a = len(self.__root_seed_list)
@@ -869,7 +869,7 @@ class CreateTree(ParserTreeIDT):
 				raise ValueError(self.__te._ValueError0(seed_or_index))
 			self.__log.error(f'ValueError: {self.__te._ValueError0(seed_or_index)}')
 			return
-		if ';' in str(new_seed) or '.' in str(new_seed) or ':' in str(new_seed):
+		if ';' in str(new_seed) or ':' in str(new_seed):
 			if self.__error:
 				raise ValueError(self.__te._ValueError1(new_seed))
 			self.__log.error(f'ValueError: {self.__te._ValueError1(new_seed)}')
@@ -1036,6 +1036,12 @@ class CreateTree(ParserTreeIDT):
 		if value == None:
 			return self.__list_seed.copy()
 		self.__list_seed.append(value)
+
+
+	def pt(self) -> Union[None, str]:
+		for i in self.__tree:
+			print('  '*(len(i.split(':'))-1), end='')
+			print(str(self.seed(i))+('═╗' if self.logic_from_index(i) == None else ''))
 
 
 	@property

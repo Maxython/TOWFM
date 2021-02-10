@@ -9,8 +9,6 @@ TOWFM is a flexible and convenient Python module for creating various tree data 
 The module supports the latest python version (3.9).
 #### Command:
 ```
-pip3 install wikipedia
-pip3 install Pillow
 pip3 install TOWFM
 ```
 
