@@ -17,6 +17,7 @@ After installing the module, you can start generating the Binary Tree.
 #### Command:
 ```Python
 from towfm.BTT import run
+
 run()
 ```
 The result will be saved in the test_tree.js file.
@@ -27,8 +28,8 @@ from towfm.WT import CreateWT
 
 a = CreateWT('hello world')
 a.handle()
-a.tree
 
+a.tree
 ```
 
 ## Create binary search tree
@@ -66,9 +67,9 @@ a = CreateTree() #4 way
 a.add_root_node('a')
 a.add(0, list(range(10)))
 
-a = CreateTree('a', specific_type=0) #5 way
+a = CreateTree('a') #5 way
 for i in range(10):
-    a.add(i)
+    a.add(0, i)
 
 a.tree #The return of the tree
 ```
