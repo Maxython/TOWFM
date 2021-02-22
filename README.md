@@ -28,8 +28,6 @@ from towfm.WT import CreateWT
 
 a = CreateWT('hello world')
 a.handle()
-
-a.tree
 ```
 
 ## Create binary search tree
@@ -47,7 +45,6 @@ a.append(2)
 a.append(6)
 a.append(3)
 
-a.tree #Returns the complete tree
 a.processed_tree #Returns a tree without extra nodes
 ```
 
@@ -70,8 +67,30 @@ a.add(0, list(range(10)))
 a = CreateTree('a') #5 way
 for i in range(10):
     a.add(0, i)
+```
 
-a.tree #The return of the tree
+## Tree output
+
+### First way:
+Outputs the tree dictionary (main).
+```Python
+a = CreateTree('a', list(range(10)))
+print(a.tree)
+```
+
+### Second way:
+Output of the CreateTree class.
+```Python
+a = CreateTree('a', list(range(10)))
+print(a)
+```
+This method displays only part of the tree and additional information.
+
+### Third way:
+Prints the tree in an understandable format.
+```Python
+a = CreateTree('a', list(range(10)))
+a.pt()
 ```
 
 ## [Telegram Bot Test](https://github.com/Maxython/TOWFM/tree/main/bot)
