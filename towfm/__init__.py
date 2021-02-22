@@ -1,18 +1,15 @@
-import wikipedia
-import requests
 from typing import Union
 from PIL import Image, ImageFilter, ImageDraw
 from json import loads, dumps
 import logging
 
 
+__version__ = '0.1.1'
+
+
 #Text for the logging module
 #You can change the format of the information
 text_info_for_logging = '[%(levelname)s | %(asctime)s | %(message)s]'
-
-#A list with a value to be removed when searched in the Wiki class.
-#You can add a value to this list.
-delete_character_list = ['(', ')', '[', ']', '.', ',', '!', '?', ':', ';', '"', "'", '»', '«']
 
 #Tree knowledge list.
 #You can add a value to this list.
@@ -53,103 +50,6 @@ class _TextError:
 
 	def _BufferError5(value:Union[str, int]) -> str:
 		return f'you cannot change the logic at node "{value}".'
-
-
-class Wiki:
-
-
-	def __init__(self, seed:str=None, lang:str='en', quantity:int=None, replacement_seed:bool=False, lower:bool=True, remove_numbers:bool=False, deletion_with_a_certain_amount:int=0) -> None:
-		self.__lang = lang
-		self.__quantity = quantity
-		self.__replacement = replacement_seed
-		self.__lower = lower
-		self.__remove_numbers = remove_numbers
-		self.__deletion_with_a_certain_amount = deletion_with_a_certain_amount
-		if seed != None:
-			self.search(seed)
-
-
-	def __str__(self) -> str:
-		return ','.join(self.__list)
-
-
-	def search(self, seed:str) -> None:
-		b, c = [], seed
-		self.__replacement_seed = False
-		self.__old_seed = None
-		while True:
-			try:
-				wikipedia.set_lang(self.__lang)
-				con, con2 = wikipedia.summary(seed).split(), []
-				for i in range(len(con)):
-					try:
-						if self.__lower:
-							con[i] = con[i].lower()
-						for j in delete_character_list:
-							con[i] = con[i].replace(j, '')
-						if self.__remove_numbers:
-							try:
-								int(con[i])
-								del con[i]
-							except ValueError:
-								pass
-						if (con[i] == '' or len(con[i]) <= self.__deletion_with_a_certain_amount):
-							del con[i]
-						elif len(con2) == self.__quantity:
-							break
-						elif con[i] not in con2:
-							con2.append(con[i])
-					except IndexError:
-						break
-				break
-			except (wikipedia.exceptions.PageError, requests.exceptions.ConnectionError):
-				con2 = None
-				break
-			except wikipedia.exceptions.DisambiguationError:
-				if self.__replacement:
-					a = wikipedia.search(c)
-					if a != b:
-						if self.__old_seed == None:
-							self.__old_seed = seed
-						self.__replacement_seed = True
-						for i in a:
-							if not(i in b):
-								b.append(i)
-								seed = i.lower()
-								break
-						continue
-				con2, seed = None, c
-				break
-		self.__list = con2
-		self.__seed = seed
-
-
-	@property
-	def list(self) -> Union[list, None]:
-		return self.__list.copy() if self.__list != None else None
-
-
-	@property
-	def seed(self) -> Union[str, None]:
-		return f'{self.__seed}' if self.__seed != None else None
-
-
-	@property
-	def replacement_seed(self) -> bool:
-		return True if self.__replacement_seed == True else False
-
-
-	@property
-	def old_seed(self) -> Union[str, None]:
-		return f'{self.__old_seed}' if self.__old_seed != None else None
-
-
-	def _list(self) -> list:
-		return self.__list.copy() if self.__list != None else None
-
-
-	def _seed(self) -> str:
-		return f'{self.__seed}' if self.__seed != None else None
 
 
 class Subtraction:
@@ -280,15 +180,13 @@ class ParserTreeIDT(Subtraction):
 
 
 	def logic_from_index(self, index:Union[str, int]) -> Union[bool, None]:
-		index = str(index)
-		index2 = str(index).split(';')[0].split('.')[0].split(':')
-		b = self.nodes_by_level(len(index2))
+		a = str(index).split(';')[0].split('.')[0]
+		b = self.nodes_by_level(len(a.split(':')))
 		if b != None:
 			for i in b:
-				if index in i:
-					a = i.split(';')[0].split('.')
-					if len(a) == 2:
-						return True if '1' in a[-1] else False
+				c = i.split(';')[0].split('.')
+				if a == c[0]:
+					return bool(int(c[-1])) if len(c) == 2 else None
 
 
 	def logic_from_seed(self, seed:Union[str, int]) -> Union[dict, None]:
@@ -302,7 +200,7 @@ class ParserTreeIDT(Subtraction):
 
 	def linked_seed_by_index(self, index:Union[str, int]) -> Union[str, None]:
 		index = str(index)
-		index2 = str(index).split(';')[0].split('.')[0].split(':')
+		index2 = index.split(';')[0].split('.')[0].split(':')
 		a = self.nodes_by_level(len(index2))
 		if a != None:
 			for i in a:
@@ -334,8 +232,7 @@ class ParserTreeIDT(Subtraction):
 		b, h = self.logic_from_index(index), self.linked_seed_by_index(index)
 		c = f'{index}{"."+str(int(b)) if b != None else ""}{";"+h if h != None else ""}'
 		if c in self.__tree:
-			b = []
-			a = {c:self.__tree[c]}
+			b, a = [], {c:self.__tree[c]}
 			while True:
 				for i in list(a):
 					if not(i in b):
@@ -461,7 +358,6 @@ class ParserTreeIDT(Subtraction):
 					index2 = i.split(';')[-1]
 					for h in range(2):
 						try:
-							print(nodes)
 							for j in self.index(index2 if h == 0 else int(index2), nodes=nodes):
 								if '.0' not in j and index.split(';')[0].split('.')[0].split(':')[0] == j.split(';')[0].split('.')[0].split(':')[0]:
 									return j
@@ -747,7 +643,7 @@ class CreateTree(ParserTreeIDT):
 				for k in range(2):
 					for i in a:
 						if b != 0:
-							text = text + ('|' if k == 0 else 'o' if (i.split('.')[1] if '.' in i else '1') == '1' else 'x')
+							text = text + ('|' if k == 0 else 'o' if (i.split(';')[0].split('.')[1] if '.' in i else '1') == '1' else 'x')
 							for j in range(len(a[i])-1):
 								text = text + ' '
 							text = text + ('  ' if len(a)-1 != b else '\n' if k == 0 else '\n\n')
@@ -1038,10 +934,28 @@ class CreateTree(ParserTreeIDT):
 		self.__list_seed.append(value)
 
 
-	def pt(self) -> Union[None, str]:
-		for i in self.__tree:
-			print('  '*(len(i.split(':'))-1), end='')
-			print(str(self.seed(i))+('═╗' if self.logic_from_index(i) == None else ''))
+	def pt(self, information:bool=False) -> Union[None, str]:
+		for i in self.__root_seed_list:
+			h = self.index(i)[0]
+			a, b, c, d = 0, list(self.nodes_by_index(h)), 0, []
+			print(str(i))
+			while len(self.tree_continuation_by_index(h))-1 != len(d):
+				try:
+					if b[c] not in d:
+						f = self.__tree[b[c]]
+						print('| '+' | '*a, f[-1] if isinstance(f, list) else f, (b[c], self.linked_seed_by_index(b[c]), self.logic_from_index(b[c])) if information else '', end='')
+						d.append(b[c])
+						if self.logic_from_index(b[c]) == None:
+							print()
+							a += 1
+							c, b = 0, list(self.nodes_by_index(b[c]))
+							continue
+						else:
+							print()
+					c += 1
+				except IndexError:
+					a -= 1
+					c, b = 0, list(self.nodes_from_index(self.root_index_by_index(b[0])))
 
 
 	@property

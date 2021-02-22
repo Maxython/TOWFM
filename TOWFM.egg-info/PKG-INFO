@@ -1,14 +1,10 @@
 Metadata-Version: 1.0
 Name: TOWFM
-Version: 0.1
-Summary: Create any tree format
+Version: 0.1.1
+Summary: Create a data structure of any kind of tree.
 Home-page: https://github.com/Maxython/TOWFM
 Author: Maxython
 Author-email: UNKNOWN
 License: MIT
-Description: ![Logo](https://raw.githubusercontent.com/Maxython/TOWFM/main/IMG_GIF/4995c55f-8b54-438f-bdc2-5bc179fc0e4a.png)
-        <p align="center">
-        <h2 align="center">The module is under development.</h2>
-        </p>
-        
+Description: UNKNOWN
 Platform: UNKNOWN
